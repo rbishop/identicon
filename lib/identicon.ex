@@ -32,9 +32,15 @@ defmodule Identicon do
   end
 
   defp int_to_string(int) when int <= 9, do: Integer.to_string(int)
-
-  # Generate the integr to string conversions for integers that map to letters
   for {key, val} <- [{10, "a"}, {11, "b"}, {12, "c"}, {13, "d"}, {14, "e"}, {15, "f"}] do
     defp int_to_string(unquote(key)), do: unquote(val)
+  end
+
+  for int <- 0..9 do
+    defp string_to_int(unquote(Integer.to_string(int))), do: unquote(int)
+  end
+  for {key, val} <- [{"a", 10}, {"b", 11}, {"c", 12}, {"d", 13}, {"e", 14}, {"f", 15}] do
+
+    defp string_to_int(unquote(key)), do: unquote(val)
   end
 end
