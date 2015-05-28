@@ -5,22 +5,74 @@ defmodule Identicon do
     encoded png of 5x5 identicon for that string.
   """
 
-  defstruct hash: nil, color: nil, pixels: []
+  defstruct color: nil, hex: nil, hash: nil, grid: nil, points: nil
 
-  def render(string) do
-    string
-    |> md5
+  @gray {241, 241, 241}
+  @white {255, 255, 255}
+
+  def render(input) do
+    input 
+    |> input_to_hash
     |> extract_color
+    |> hash_to_grid
+    |> compute_squares
+    |> draw_image
   end
 
-  defp md5(string) do
+  def input_to_hash(string) do
     hash = :crypto.hash(:md5, String.to_char_list(string))
-    %Identicon{hash: decode(hash)}
+    hex = :binary.bin_to_list(hash)
+    %Identicon{hex: hex, hash: decode(hash)}
   end
 
-  defp extract_color(%Identicon{hash: hash} = identicon) do
-    color = String.slice(hash, 0..5)
-    %Identicon{identicon | color: color}
+  def extract_color(%Identicon{hex: hex} = identicon) do
+    [r, g, b | _] = hex
+    %Identicon{identicon | color: {r, g, b}}
+  end
+
+  def hash_to_grid(%Identicon{hash: hash} = identicon) do
+    grid = String.slice(hash, 6..30)
+    |> String.split("")
+    |> Enum.chunk(5)
+    |> Enum.map(&Enum.with_index/1)
+    |> Enum.with_index
+
+    %Identicon{identicon | grid: grid}
+  end
+
+  def compute_squares(%Identicon{grid: grid} = identicon) do
+    points = Enum.flat_map(grid, fn{cells, row} ->
+      Enum.map(cells, fn({cell, column}) ->
+        cell = string_to_int(cell)
+        case rem(cell, 2) do
+          0 ->
+            top_left = {row * 50, column * 50}
+            bottom_right = {row * 50 + 50, column * 50 + 50}
+            {top_left, bottom_right}
+          1 ->
+            {}
+        end
+      end)
+    end)
+
+    %Identicon{identicon | points: points}
+  end
+
+  def draw_image(%Identicon{color: color, points: points}) do
+    image = :egd.create(250, 250)
+    color = :egd.color(color)
+    background = :egd.color(@white)
+    :egd.filledRectangle(image, {0, 0}, {250, 250}, background)
+
+    draw = fn 
+      {start, stop} ->
+        :egd.filledRectangle(image, start, stop, color)
+      {} ->
+        nil
+    end
+
+    Enum.each(points, draw)
+    :egd.render(image, :png) |> Base.encode64
   end
 
   # A quick implementation for decoding hexadecimal encoded
