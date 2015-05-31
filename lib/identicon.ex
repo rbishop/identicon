@@ -62,11 +62,11 @@ defmodule Identicon do
     image = :egd.create(250, 250)
     fill = :egd.color(color)
     background = :egd.color(@white)
-    :egd.filledRectangle(image, {0, 0}, {250, 250}, background)
 
     Enum.each(points, fn({start, stop}) -> 
       :egd.filledRectangle(image, start, stop, fill)
     end)
+
     :egd.render(image, :png) |> Base.encode64
   end
 end
