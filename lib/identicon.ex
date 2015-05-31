@@ -7,7 +7,7 @@ defmodule Identicon do
     Given an input of a string you will receive a base64
     encoded png of 5x5 identicon for that string.
   """
-  defstruct color: nil, hex: nil, grid: nil, md5: nil, pixels: nil
+  defstruct color: nil, hex_code: nil, grid: nil, md5: nil, pixels: nil
 
   def render(input) do
     input 
@@ -20,12 +20,12 @@ defmodule Identicon do
 
   @spec hash_input(String.t) :: map(Identicon)
   defp hash_input(string) do
-    hex = :crypto.hash(:md5, string) |> :binary.bin_to_list
-    md5 = Enum.flat_map(hex, &(:io_lib.format("~2.16.0b", [&1]))) |> Enum.join("")
-    %Identicon{hex: hex, md5: md5}
+    hex_code = :crypto.hash(:md5, string) |> :binary.bin_to_list
+    md5 = Enum.flat_map(hex_code, &(:io_lib.format("~2.16.0b", [&1]))) |> Enum.join("")
+    %Identicon{hex_code: hex_code, md5: md5}
   end
 
-  defp extract_color(%Identicon{hex: [r, g, b | _]} = identicon) do
+  defp extract_color(%Identicon{hex_code: [r, g, b | _]} = identicon) do
     %Identicon{identicon | color: {r, g, b}}
   end
 
