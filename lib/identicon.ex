@@ -7,8 +7,6 @@ defmodule Identicon do
 
   defstruct color: nil, hex: nil, grid: nil, md5: nil, points: nil
 
-  @white {255, 255, 255}
-
   def render(input) do
     input 
     |> hash_input
@@ -61,7 +59,6 @@ defmodule Identicon do
   def draw_image(%Identicon{color: color, points: points}) do
     image = :egd.create(250, 250)
     fill = :egd.color(color)
-    background = :egd.color(@white)
 
     Enum.each(points, fn({start, stop}) -> 
       :egd.filledRectangle(image, start, stop, fill)
