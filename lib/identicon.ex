@@ -43,12 +43,12 @@ defmodule Identicon do
   def calculate_squares(%Identicon{grid: grid} = identicon) do
     points = Enum.flat_map(grid, fn({cells, row}) ->
       Enum.map(cells, fn({cell, column}) ->
-        case rem(cell, 2) do
+        case rem(cell, 3) do
           0 ->
             top_left = {row * 50, column * 50}
             bottom_right = {row * 50 + 50, column * 50 + 50}
             {top_left, bottom_right}
-          1 ->
+          _ ->
             {}
         end
       end)
