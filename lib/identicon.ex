@@ -18,7 +18,6 @@ defmodule Identicon do
     |> draw_image
   end
 
-  @spec hash_input(String.t) :: map(Identicon)
   defp hash_input(string) do
     hex_code = :crypto.hash(:md5, string) |> :binary.bin_to_list
     md5 = Enum.flat_map(hex_code, &(:io_lib.format("~2.16.0b", [&1]))) |> Enum.join("")
