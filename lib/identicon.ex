@@ -5,34 +5,34 @@ defmodule Identicon do
     encoded png of 5x5 identicon for that string.
   """
 
-  defstruct color: nil, hex: nil, hash: nil, grid: nil, points: nil
+  defstruct color: nil, hex: nil, grid: nil, md5: nil, points: nil
 
-  @gray {241, 241, 241}
   @white {255, 255, 255}
 
   def render(input) do
     input 
-    |> input_to_hash
+    |> hash_input
     |> extract_color
-    |> hash_to_grid
-    |> compute_squares
+    |> build_grid
+    |> calculate_squares
     |> draw_image
   end
 
-  def input_to_hash(string) do
-    hash = :crypto.hash(:md5, String.to_char_list(string))
-    hex = :binary.bin_to_list(hash)
-    %Identicon{hex: hex, hash: decode(hash)}
+  @spec hash_input(String.t) :: map(Identicon)
+  def hash_input(string) do
+    hex = :crypto.hash(:md5, string) |> :binary.bin_to_list
+    md5 = Enum.flat_map(hex, &(:io_lib.format("~2.16.0b", [&1]))) |> Enum.join("")
+    %Identicon{hex: hex, md5: md5}
   end
 
-  def extract_color(%Identicon{hex: hex} = identicon) do
-    [r, g, b | _] = hex
+  def extract_color(%Identicon{hex: [r, g, b | _]} = identicon) do
     %Identicon{identicon | color: {r, g, b}}
   end
 
-  def hash_to_grid(%Identicon{hash: hash} = identicon) do
-    grid = String.slice(hash, 6..30)
-    |> String.split("")
+  def build_grid(%Identicon{md5: md5} = identicon) do
+    grid = String.slice(md5, 6..30)
+    |> String.split("", trim: true)
+    |> Enum.map(&(:erlang.binary_to_integer(&1, 16)))
     |> Enum.chunk(5)
     |> Enum.map(&Enum.with_index/1)
     |> Enum.with_index
@@ -40,10 +40,9 @@ defmodule Identicon do
     %Identicon{identicon | grid: grid}
   end
 
-  def compute_squares(%Identicon{grid: grid} = identicon) do
-    points = Enum.flat_map(grid, fn{cells, row} ->
+  def calculate_squares(%Identicon{grid: grid} = identicon) do
+    points = Enum.flat_map(grid, fn({cells, row}) ->
       Enum.map(cells, fn({cell, column}) ->
-        cell = string_to_int(cell)
         case rem(cell, 2) do
           0 ->
             top_left = {row * 50, column * 50}
@@ -53,6 +52,7 @@ defmodule Identicon do
             {}
         end
       end)
+      |> Enum.reject(&(&1 == {}))
     end)
 
     %Identicon{identicon | points: points}
@@ -60,39 +60,13 @@ defmodule Identicon do
 
   def draw_image(%Identicon{color: color, points: points}) do
     image = :egd.create(250, 250)
-    color = :egd.color(color)
+    fill = :egd.color(color)
     background = :egd.color(@white)
     :egd.filledRectangle(image, {0, 0}, {250, 250}, background)
 
-    draw = fn 
-      {start, stop} ->
-        :egd.filledRectangle(image, start, stop, color)
-      {} ->
-        nil
-    end
-
-    Enum.each(points, draw)
+    Enum.each(points, fn({start, stop}) -> 
+      :egd.filledRectangle(image, start, stop, fill)
+    end)
     :egd.render(image, :png) |> Base.encode64
-  end
-
-  # A quick implementation for decoding hexadecimal encoded
-  # binaries into unicode binaries
-  defp decode(bin), do: decode(bin, "")
-  defp decode(<<>>, acc), do: acc
-  defp decode(<<first::size(4), second::size(4), rest::binary>>, acc) do
-    decode(rest, acc <> int_to_string(first) <> int_to_string(second))
-  end
-
-  defp int_to_string(int) when int <= 9, do: Integer.to_string(int)
-  for {key, val} <- [{10, "a"}, {11, "b"}, {12, "c"}, {13, "d"}, {14, "e"}, {15, "f"}] do
-    defp int_to_string(unquote(key)), do: unquote(val)
-  end
-
-  for int <- 0..9 do
-    defp string_to_int(unquote(Integer.to_string(int))), do: unquote(int)
-  end
-  for {key, val} <- [{"a", 10}, {"b", 11}, {"c", 12}, {"d", 13}, {"e", 14}, {"f", 15}] do
-
-    defp string_to_int(unquote(key)), do: unquote(val)
   end
 end
