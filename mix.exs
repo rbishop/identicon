@@ -3,7 +3,7 @@ defmodule Identicon.Mixfile do
 
   def project do
     [app: :identicon,
-     version: "0.1.0",
+     version: "0.2.0",
      elixir: "~> 1.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -12,7 +12,7 @@ defmodule Identicon.Mixfile do
      name: "Identicon",
      source_url: "https://github.com/rbishop/identicon",
      homepage_url: "https://github.com/rbishop/identicon",
-     description: "Elixir library for generating 5x5 identicons",
+     description: "Elixir library for generating 5x5 symmetrical identicons",
    ]
   end
 
