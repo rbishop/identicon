@@ -10,7 +10,7 @@ will get back a Base64 encoded string representing your
 identicon image.
 
 ```elixir
-image = Identicon.render "rbishop"
+image = Identicon.render "Elixir"
 # => a1070f60bb1e600..."
 ```
 
@@ -18,12 +18,12 @@ You can just keep using this in memory or write to file and decode into an
 image:
 
 ```elixir
-image = Identicon.render "rbishop"
-:ok = File.write("rbishop.txt", image)
+image = Identicon.render "Elixir"
+:ok = File.write("Elixir.txt", image)
 ```
 
 ```bash
-$ cat rbishop.txt | base64 -D -o rbishop.png
+$ cat Elixir.txt | base64 -D -o elixir.png
 ```
 
 ## Todo
