@@ -5,7 +5,7 @@ defmodule Identicon do
     This library generates GitHub-like, symmetrical identicons.
 
     Given an input of a string you will receive a base64
-    encoded png of 5x5 identicon for that string.
+    encoded png of a 5x5 identicon for that string.
   """
   defstruct color: nil, hex: nil, grid: nil, pixels: nil
 
@@ -14,6 +14,7 @@ defmodule Identicon do
     |> hash_input
     |> extract_color
     |> build_grid
+    |> remove_odd_bytes
     |> calculate_pixels
     |> draw_image
   end
@@ -30,11 +31,14 @@ defmodule Identicon do
   # We remove the head of the hexadecimal list because we only need fifteen
   # bytes to generate the left side and center of the grid
   defp build_grid(%Identicon{hex: [_ | hex]} = identicon) do
-    grid = hex
-    |> Enum.chunk(3)
-    |> Enum.flat_map(&Grid.mirror_row/1)
-    |> Enum.with_index
-    |> Enum.filter(fn({code, _index}) -> rem(code, 2) == 0 end)
+    grid = Grid.from_hex hex
+    %Identicon{identicon | grid: grid}
+  end
+
+  def remove_odd_bytes(%Identicon{grid: grid} = identicon) do
+    grid = Enum.filter grid, fn({code, _index}) -> 
+      rem(code, 2) == 0
+    end
 
     %Identicon{identicon | grid: grid}
   end
