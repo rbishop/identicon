@@ -1,13 +1,13 @@
 defmodule Identicon do
+  alias Identicon.Grid
+
   @moduledoc """
-    This library generates GitHub-like identicons. Unlike
-    GitHub's identicons, the identicons this library generates
-    are not symmetrical.
+    This library generates GitHub-like, symmetrical identicons.
 
     Given an input of a string you will receive a base64
     encoded png of 5x5 identicon for that string.
   """
-  defstruct color: nil, hex_code: nil, grid: nil, md5: nil, pixels: nil
+  defstruct color: nil, hex: nil, grid: nil, pixels: nil
 
   def render(input) do
     input 
@@ -19,19 +19,20 @@ defmodule Identicon do
   end
 
   defp hash_input(string) do
-    hex_code = :crypto.hash(:md5, string) |> :binary.bin_to_list
-    md5 = Enum.flat_map(hex_code, &(:io_lib.format("~2.16.0b", [&1]))) |> Enum.join("")
-    %Identicon{hex_code: hex_code, md5: md5}
+    hex = :crypto.hash(:md5, string) |> :binary.bin_to_list
+    %Identicon{hex: hex}
   end
 
-  defp extract_color(%Identicon{hex_code: [r, g, b | _]} = identicon) do
+  defp extract_color(%Identicon{hex: [r, g, b | _]} = identicon) do
     %Identicon{identicon | color: {r, g, b}}
   end
 
-  defp build_grid(%Identicon{md5: md5} = identicon) do
-    grid = String.slice(md5, 6..30)
-    |> String.split("", trim: true)
-    |> Enum.map(&(:erlang.binary_to_integer(&1, 16)))
+  # We remove the head of the hexadecimal list because we only need fifteen
+  # bytes to generate the left side and center of the grid
+  defp build_grid(%Identicon{hex: [_ | hex]} = identicon) do
+    grid = hex
+    |> Enum.chunk(3)
+    |> Enum.flat_map(&Grid.mirror_row/1)
     |> Enum.with_index
     |> Enum.filter(fn({code, _index}) -> rem(code, 2) == 0 end)
 
@@ -40,11 +41,12 @@ defmodule Identicon do
 
   defp calculate_pixels(%Identicon{grid: grid} = identicon) do
     pixels = Enum.map(grid, fn({_code, index}) ->
-      row = div(index, 5)
-      column = rem(index, 5)
+      horizontal = rem(index, 5) * 50
+      vertical = div(index, 5) * 50
 
-      top_left = {row * 50, column * 50}
-      bottom_right = {row * 50 + 50, column * 50 + 50}
+      top_left = {horizontal, vertical}
+      bottom_right = {horizontal + 50, vertical + 50}
+
       {top_left, bottom_right}
     end)
 
