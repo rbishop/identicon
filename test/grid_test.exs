@@ -1,9 +1,10 @@
 defmodule GridTest do
   use ExUnit.Case
-  alias Identicon.Grid
+  alias Identicon.Renderers.GitHubLike.Grid
 
   test "mirrored rows of 5 values are generated from a list" do
-    list = [1, 2, 2, 4, 1, 2]
+    list = [1, 2, 2,
+            4, 1, 2]
 
     grid = Grid.from_hex list
 
@@ -11,6 +12,11 @@ defmodule GridTest do
             {1, 0}, {2, 1}, {2, 2}, {2, 3}, {1, 4},
             {4, 5}, {1, 6}, {2, 7}, {1, 8}, {4, 9}
            ] == grid
+
+    # assert [
+    #         {2, 1}, {2, 2}, {2, 3},
+    #         {4, 5}, {2, 7}, {4, 9}
+    #       ]
   end
 
   test "mirroring with an odd number of columns" do

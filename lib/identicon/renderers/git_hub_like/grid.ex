@@ -1,4 +1,4 @@
-defmodule Identicon.Grid do
+defmodule Identicon.Renderers.GitHubLike.Grid do
   require Integer
 
   @moduledoc """
@@ -22,6 +22,12 @@ defmodule Identicon.Grid do
         List.flatten [row | reversed]
       false ->
         List.flatten [row | tl(reversed)]
+    end
+  end
+
+  def remove_odd_bytes(grid) do
+    Enum.filter grid, fn({code, _index}) ->
+      rem(code, 2) == 0
     end
   end
 end
