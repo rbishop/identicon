@@ -14,8 +14,16 @@ defmodule IdenticonTest do
   test "happy input is string" do
     {:ok, _result} = Identicon.render("some string")
   end
+  
+  test "happy input is string - bang" do
+    _result = Identicon.render!("some string")
+  end
 
   test "non-string input errors" do
-    {:error, reason} = Identicon.render(:not_a_string)
+    {:error, _reason} = Identicon.render(:not_a_string)
+  end
+  
+  test "size 6 identicon" do
+    Identicon.render!("Elixir6", size: 6)
   end
 end

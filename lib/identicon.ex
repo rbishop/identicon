@@ -1,34 +1,33 @@
 defmodule Identicon do
   @moduledoc """
-  Defines both the Identicon struct and the facade with which to interact.
+  This is the primary module to create identicons.
   """
 
+  import Identicon.Macros, only: [bang: 1]
+  
+  @default_size 5
+
   @doc """
-  Takes in
+  
   """
   @spec render(String.t, [] | [...]) :: {:ok, String.t} | {:error, String.t}
-  def render(input, opts \\ [type: :githublike, size: :size_5x5])
-  def render(input, type: :githublike, size: size) do
+  def render(input, opts \\ [type: :githublike, size: @default_size])
+  # GitHubLike Renderer
+  def render(input, [type: :githublike, size: size]) do
     Identicon.Renderers.GitHubLike.render(input, size)
   end
-  def render(input, type: :githublike) do
-    Identicon.Renderers.GitHubLike.render(input, :size_5x5)
+  def render(input, [type: :githublike]) do
+    Identicon.Renderers.GitHubLike.render(input, @default_size)
+  end
+  def render(input, [size: size]) do
+    Identicon.Renderers.GitHubLike.render(input, [type: :githublike, size: size])
   end
   def render(input, []) do
     render(input)
   end
 
-  def render!(input, opts \\ [type: :githublike, size: :size_5x5])
-  def render!(input, type: :githublike, size: size) do
-    case Identicon.Renderers.GitHubLike.render(input, size) do
-      {:ok, result} -> result
-      {:error, error} -> raise error
-    end
-  end
-  def render!(input, type: :githublike) do
-    Identicon.Renderers.GitHubLike.render(input, :size_5x5)
-  end
-  def render!(input, []) do
-    render(input)
-  end
+  @doc """
+  Bang version of `render/2`.
+  """
+  def render!(input, opts \\ []), do: render(input, opts) |> bang()
 end

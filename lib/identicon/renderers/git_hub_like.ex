@@ -10,11 +10,11 @@ defmodule Identicon.Renderers.GitHubLike do
   alias Identicon.Renderers.GitHubLike.Struct
   import Identicon.Helper
 
-  def render(input, :size_5x5) when is_bitstring(input) do
+  def render(input, size) when is_bitstring(input) do
     result =
       input
-      |> to_identicon
-      |> add_hex
+      |> to_identicon(size)
+      |> add_hash
       |> add_color
       |> add_grid
       |> calculate_pixels
@@ -23,30 +23,31 @@ defmodule Identicon.Renderers.GitHubLike do
     {:ok, result}
   end
   def render(input, size) do
-    {:error, emsg_invalid_args(%{expected: "String.t, :size_5x5", actual: [input, size]})}
+    {:error, emsg_invalid_args(%{expected: "String.t, 5", actual: [input, size]})}
   end
 
-  defp to_identicon(input) do
-    %Struct{input: input}
+  defp to_identicon(input, size) do
+    IO.puts "input: #{input}"
+    %Struct{input: input, size: size}
   end
 
-  defp add_hex(%Struct{input: input}) do
-    hex = :crypto.hash(:md5, input) |> :binary.bin_to_list
-    %Struct{hex: hex}
+  defp add_hash(%Struct{input: input}) do
+    hash = :crypto.hash(:md5, input) |> :binary.bin_to_list
+    %Struct{hash: hash}
   end
 
-  defp add_color(%Struct{hex: [r, g, b | _]} = identicon) do
+  defp add_color(%Struct{hash: [r, g, b | _]} = identicon) do
     %Struct{identicon | color: {r, g, b}}
   end
 
   # We remove the head of the hexadecimal list because we only need fifteen
   # bytes to generate the left side and center of the grid
-  defp add_grid(%Struct{hex: [_ | hex], size: 5} = identicon) do
+  defp add_grid(%Struct{hash: [_ | hash], size: size} = identicon) do
     grid =
-      hex
+      hash
       |> Grid.from_hex
-      |> Grid.remove_odd_bytes
-      
+      # |> Grid.remove_odd_bytes
+
     %Struct{identicon | grid: grid}
   end
 
@@ -54,7 +55,8 @@ defmodule Identicon.Renderers.GitHubLike do
     pixels = Enum.map(grid, fn({_code, index}) ->
       horizontal = rem(index, 5) * 50
       vertical = div(index, 5) * 50
-
+      
+      IO.puts("index: #{index}. horizontal: #{horizontal}. vertical: #{vertical}")
       top_left = {horizontal, vertical}
       bottom_right = {horizontal + 50, vertical + 50}
 
