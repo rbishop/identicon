@@ -1,70 +1,40 @@
 defmodule Identicon do
-  alias Identicon.Grid
-
   @moduledoc """
-    This library generates GitHub-like, symmetrical identicons.
-
-    Given an input of a string you will receive a base64
-    encoded png of a 5x5 identicon for that string.
+  This is the primary module to create identicons.
   """
-  defstruct color: nil, hex: nil, grid: nil, pixels: nil
 
-  def render(input) do
-    input 
-    |> hash_input
-    |> extract_color
-    |> build_grid
-    |> remove_odd_bytes
-    |> calculate_pixels
-    |> draw_image
+  alias Identicon.Renderers.GitHubLike
+  import Identicon.Macros, only: [bang: 1]
+  
+  @default_renderer :githublike
+  @default_size 5
+
+  @doc """
+  This is the main function for this library. It will produce the base64 encoded
+  image bytes that you can then save as text.
+  """
+  @spec render(String.t|char_list, [] | [...]) :: {:ok, String.t} | {:error, String.t}
+  def render(input, 
+             opts \\ [type: @default_renderer, size: @default_size])
+  def render(input, opts) when is_list(input) do
+    render(to_string(input), opts)
+  end
+  # GitHubLike Renderer
+  def render(input, [type: :githublike, size: size] = opts) do
+    GitHubLike.render(input, opts)
+  end
+  def render(input, [type: :githublike]) do
+    GitHubLike.render(input, [type: :githublike, size: @default_size])
+  end
+  def render(input, [size: size]) do
+    GitHubLike.render(input, [type: :githublike, size: size])
+  end
+  def render(input, []) do
+    render(input)
   end
 
-  defp hash_input(string) do
-    hex = :crypto.hash(:md5, string) |> :binary.bin_to_list
-    %Identicon{hex: hex}
-  end
-
-  defp extract_color(%Identicon{hex: [r, g, b | _]} = identicon) do
-    %Identicon{identicon | color: {r, g, b}}
-  end
-
-  # We remove the head of the hexadecimal list because we only need fifteen
-  # bytes to generate the left side and center of the grid
-  defp build_grid(%Identicon{hex: [_ | hex]} = identicon) do
-    grid = Grid.from_hex hex
-    %Identicon{identicon | grid: grid}
-  end
-
-  def remove_odd_bytes(%Identicon{grid: grid} = identicon) do
-    grid = Enum.filter grid, fn({code, _index}) -> 
-      rem(code, 2) == 0
-    end
-
-    %Identicon{identicon | grid: grid}
-  end
-
-  defp calculate_pixels(%Identicon{grid: grid} = identicon) do
-    pixels = Enum.map(grid, fn({_code, index}) ->
-      horizontal = rem(index, 5) * 50
-      vertical = div(index, 5) * 50
-
-      top_left = {horizontal, vertical}
-      bottom_right = {horizontal + 50, vertical + 50}
-
-      {top_left, bottom_right}
-    end)
-
-    %Identicon{identicon | pixels: pixels}
-  end
-
-  defp draw_image(%Identicon{color: color, pixels: pixels}) do
-    image = :egd.create(250, 250)
-    fill = :egd.color(color)
-
-    Enum.each(pixels, fn({start, stop}) -> 
-      :egd.filledRectangle(image, start, stop, fill)
-    end)
-
-    :egd.render(image, :png) |> Base.encode64
-  end
+  @doc """
+  Bang version of `render/2`.
+  """
+  def render!(input, opts \\ []), do: render(input, opts) |> bang()
 end

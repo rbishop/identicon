@@ -5,12 +5,11 @@ An Elixir library for generating GitHub-like symmetrical 5x5 identicons.
 
 ## Usage
 
-Just pass a string or `char_list` to `Identicon.render/1`. You
-will get back a Base64 encoded string representing your
-identicon image.
+Just pass a string or `char_list` to `Identicon.render!/2`. You
+will get back a Base64 encoded string representing your identicon image.
 
 ```elixir
-image = Identicon.render "Elixir"
+image = Identicon.render! "Elixir"
 # => a1070f60bb1e600..."
 ```
 
@@ -18,7 +17,7 @@ You can just keep using this in memory or write to file and decode into an
 image:
 
 ```elixir
-image = Identicon.render "Elixir"
+image = Identicon.render! "Elixir"
 :ok = File.write("Elixir.txt", image)
 ```
 
@@ -26,10 +25,16 @@ image = Identicon.render "Elixir"
 $ cat Elixir.txt | base64 -D -o elixir.png
 ```
 
+In Ubuntu 16.04:
+```bash
+cat Elixir.txt | base64 -d > elixir.png
+```
+
 ## Todo
 
 - [ ] Support various size/pixel count/background color identicons
-- [x] Make the identicons symmetric like GitHub's (so cool!)
+- [x] Make the identicons symmetric like GitHub's (so cool! :sunglasses:)
+- [ ] Support other identicon visual implementations.
 
 ## Contributing
 
