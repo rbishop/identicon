@@ -1,16 +1,18 @@
 defmodule Identicon.Renderers.GitHubLike do
   @moduledoc """
     This library generates GitHub-like, symmetrical identicons.
-
-    Given an input of a string you will receive a base64
-    encoded png of a 5x5 identicon for that string.
+    
+    This can do GitHub-like identicons with various sizes. 
+    Given an input of a string you will receive a base64 encoded png of a
+    sizexsize identicon for that string.
   """
 
   alias Identicon.Renderers.GitHubLike.Grid
   alias Identicon.Renderers.GitHubLike.Struct
   import Identicon.Helper
 
-  def render(input, size) when is_bitstring(input) do
+  def render(input, opts) when is_bitstring(input) do
+    size = Keyword.get(opts, :size)
     result =
       input
       |> to_identicon(size)
@@ -27,13 +29,12 @@ defmodule Identicon.Renderers.GitHubLike do
   end
 
   defp to_identicon(input, size) do
-    IO.puts "input: #{input}"
     %Struct{input: input, size: size}
   end
 
-  defp add_hash(%Struct{input: input}) do
+  defp add_hash(%Struct{input: input} = identicon) do
     hash = :crypto.hash(:md5, input) |> :binary.bin_to_list
-    %Struct{hash: hash}
+    %Struct{identicon | hash: hash}
   end
 
   defp add_color(%Struct{hash: [r, g, b | _]} = identicon) do
@@ -45,20 +46,20 @@ defmodule Identicon.Renderers.GitHubLike do
   defp add_grid(%Struct{hash: [_ | hash], size: size} = identicon) do
     grid =
       hash
-      |> Grid.from_hex
-      # |> Grid.remove_odd_bytes
+      |> Grid.from_hex(size)
+      |> Grid.remove_odd_bytes
 
     %Struct{identicon | grid: grid}
   end
 
-  defp calculate_pixels(%Struct{grid: grid} = identicon) do
+  defp calculate_pixels(%Struct{grid: grid, size: size} = identicon) do
+    pixel_size = 10 * size
     pixels = Enum.map(grid, fn({_code, index}) ->
-      horizontal = rem(index, 5) * 50
-      vertical = div(index, 5) * 50
-      
-      IO.puts("index: #{index}. horizontal: #{horizontal}. vertical: #{vertical}")
+      horizontal = rem(index, size) * pixel_size
+      vertical = div(index, size) * pixel_size
+
       top_left = {horizontal, vertical}
-      bottom_right = {horizontal + 50, vertical + 50}
+      bottom_right = {horizontal + pixel_size, vertical + pixel_size}
 
       {top_left, bottom_right}
     end)
@@ -66,8 +67,9 @@ defmodule Identicon.Renderers.GitHubLike do
     %Struct{identicon | pixels: pixels}
   end
 
-  defp draw_image(%Struct{color: color, pixels: pixels}) do
-    image = :egd.create(250, 250)
+  defp draw_image(%Struct{color: color, pixels: pixels, size: size}) do
+    len = 10 * size * size
+    image = :egd.create(len, len)
     fill = :egd.color(color)
 
     Enum.each(pixels, fn({start, stop}) ->
